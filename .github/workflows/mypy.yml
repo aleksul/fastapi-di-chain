@@ -1,0 +1,24 @@
+name: MyPy
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  mypy:
+    name: MyPy (Python 3.10)
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v5
+
+    - name: Install or update dependencies
+      run: uv sync --frozen --all-extras --all-groups --python 3.10
+
+    - name: Run MyPy
+      run: uv run mypy .
