@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, Request
 from fastapi.testclient import TestClient
 
-from src.chain import DependsChain
+from fastapi_di_chain.chain import DependsChain
 
 # --- Helpers for order tracking ---
 order: list[str] = []

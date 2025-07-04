@@ -38,7 +38,7 @@ funding = "https://github.com/sponsors/aleksul"
 repository = "https://github.com/aleksul/fastapi-di-chain"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["fastapi_di_chain"]
 
 [tool.hatch.version]
 source = "vcs"
