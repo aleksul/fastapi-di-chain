@@ -7,6 +7,8 @@ from typing import Annotated, Any
 from fastapi import Depends
 from fastapi.params import Depends as DependsT
 
+from .utils import is_async_gen_callable, is_coroutine_callable, is_gen_callable
+
 DependencyCallableT = Callable[..., Any]
 HandlerT = DependencyCallableT | DependsT
 
@@ -58,18 +60,18 @@ class DependsChain(DependsT, metaclass=_DependsChainMeta):
 
         chained_dependency: Callable
 
-        if inspect.isasyncgenfunction(new_callable):
+        if is_async_gen_callable(new_callable):
 
             async def chained_dependency(*args: Any, **kwargs: Any) -> Any:
                 kwargs.pop(self.DEPENDS_CHAIN_INJECTED_PARAM_NAME)
                 async for item in new_callable(*args, **kwargs):
                     yield item
-        elif inspect.isgeneratorfunction(new_callable):
+        elif is_gen_callable(new_callable):
 
             def chained_dependency(*args: Any, **kwargs: Any) -> Any:
                 kwargs.pop(self.DEPENDS_CHAIN_INJECTED_PARAM_NAME)
                 yield from new_callable(*args, **kwargs)
-        elif inspect.iscoroutinefunction(new_callable):
+        elif is_coroutine_callable(new_callable):
 
             async def chained_dependency(*args: Any, **kwargs: Any) -> Any:
                 kwargs.pop(self.DEPENDS_CHAIN_INJECTED_PARAM_NAME)

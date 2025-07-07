@@ -47,11 +47,21 @@ def base_dep() -> str:
 # --- Additional dependencies for new tests ---
 class ClassDep:
     def __init__(self) -> None:
-        order.append("class_init")
+        pass
 
     def __call__(self) -> str:
         order.append("class_call")
         return "class_dep"
+
+
+# Async class dependency
+class AsyncClassDep:
+    def __init__(self) -> None:
+        pass
+
+    async def __call__(self) -> str:
+        order.append("async_class_call")
+        return "async_class_dep"
 
 
 # Dependency with another dependency (e.g., Request)
@@ -99,8 +109,25 @@ def endpoint_order(
     return {"result": result}
 
 
+@app.get("/order2")
+def endpoint_order2(
+    result: Annotated[
+        str,
+        DependsChain() | sync_dep | ClassDep() | AsyncClassDep() | async_dep,
+    ],
+) -> dict:
+    return {"result": result}
+
+
 @app.get("/class-dep")
 def endpoint_class_dep(result: Annotated[str, DependsChain() | ClassDep()]) -> dict:
+    return {"result": result}
+
+
+@app.get("/async-class-dep")
+async def endpoint_async_class_dep(
+    result: Annotated[str, DependsChain() | AsyncClassDep()],
+) -> dict:
     return {"result": result}
 
 
@@ -175,12 +202,33 @@ def test_order() -> None:
     ]
 
 
+def test_order2() -> None:
+    reset_order()
+    resp = client.get("/order2")
+    assert resp.status_code == 200
+    assert resp.json()["result"] == "async"
+    assert order == [
+        "sync",
+        "class_call",
+        "async_class_call",
+        "async",
+    ]
+
+
 def test_class_dep() -> None:
     reset_order()
     resp = client.get("/class-dep")
     assert resp.status_code == 200
     assert resp.json()["result"] == "class_dep"
     assert order == ["class_call"]
+
+
+def test_async_class_dep() -> None:
+    reset_order()
+    resp = client.get("/async-class-dep")
+    assert resp.status_code == 200
+    assert resp.json()["result"] == "async_class_dep"
+    assert order == ["async_class_call"]
 
 
 def test_dep_with_request() -> None:
