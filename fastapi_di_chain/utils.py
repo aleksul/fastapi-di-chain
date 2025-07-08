@@ -1,3 +1,5 @@
+"""Utilities for checking callable types, similar to how it's done in FastAPI."""
+
 import inspect
 from collections.abc import Callable
 from typing import Any

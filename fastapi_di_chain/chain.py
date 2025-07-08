@@ -7,6 +7,12 @@ from typing import Annotated, Any
 from fastapi import Depends
 from fastapi.params import Depends as DependsT
 
+from .chained_dependency_classes import (
+    _ChainedDependencyAsyncGen,
+    _ChainedDependencyCoroutine,
+    _ChainedDependencyGen,
+    _ChainedDependencySync,
+)
 from .utils import is_async_gen_callable, is_coroutine_callable, is_gen_callable
 
 DependencyCallableT = Callable[..., Any]
@@ -27,7 +33,7 @@ class DependsChain(DependsT, metaclass=_DependsChainMeta):
     def __init__(self) -> None:
         super().__init__()
 
-    def _add_link(self, new_dependency: HandlerT) -> None:  # noqa: C901
+    def _add_link(self, new_dependency: HandlerT) -> None:
         """Override current dependency and make it depend on the current one."""
         if isinstance(new_dependency, DependsT):
             new_callable = new_dependency.dependency
@@ -61,33 +67,31 @@ class DependsChain(DependsT, metaclass=_DependsChainMeta):
         chained_dependency: Callable
 
         if is_async_gen_callable(new_callable):
-
-            async def chained_dependency(*args: Any, **kwargs: Any) -> Any:
-                kwargs.pop(self.DEPENDS_CHAIN_INJECTED_PARAM_NAME)
-                async for item in new_callable(*args, **kwargs):
-                    yield item
+            chained_dependency = _ChainedDependencyAsyncGen(
+                new_callable,
+                self.DEPENDS_CHAIN_INJECTED_PARAM_NAME,
+                inspect.Signature(parameters=params, return_annotation=sig.return_annotation),
+            )
         elif is_gen_callable(new_callable):
-
-            def chained_dependency(*args: Any, **kwargs: Any) -> Any:
-                kwargs.pop(self.DEPENDS_CHAIN_INJECTED_PARAM_NAME)
-                yield from new_callable(*args, **kwargs)
+            chained_dependency = _ChainedDependencyGen(
+                new_callable,
+                self.DEPENDS_CHAIN_INJECTED_PARAM_NAME,
+                inspect.Signature(parameters=params, return_annotation=sig.return_annotation),
+            )
         elif is_coroutine_callable(new_callable):
-
-            async def chained_dependency(*args: Any, **kwargs: Any) -> Any:
-                kwargs.pop(self.DEPENDS_CHAIN_INJECTED_PARAM_NAME)
-                return await new_callable(*args, **kwargs)
+            chained_dependency = _ChainedDependencyCoroutine(
+                new_callable,
+                self.DEPENDS_CHAIN_INJECTED_PARAM_NAME,
+                inspect.Signature(parameters=params, return_annotation=sig.return_annotation),
+            )
         elif callable(new_callable):
-
-            def chained_dependency(*args: Any, **kwargs: Any) -> Any:
-                kwargs.pop(self.DEPENDS_CHAIN_INJECTED_PARAM_NAME)
-                return new_callable(*args, **kwargs)
+            chained_dependency = _ChainedDependencySync(
+                new_callable,
+                self.DEPENDS_CHAIN_INJECTED_PARAM_NAME,
+                inspect.Signature(parameters=params, return_annotation=sig.return_annotation),
+            )
         else:
             raise TypeError(f"Unsupported callable type: {type(new_callable)}")
-
-        chained_dependency.__signature__ = inspect.Signature(  # type: ignore[union-attr]
-            parameters=params,
-            return_annotation=sig.return_annotation,
-        )
 
         self.dependency = chained_dependency
         self.use_cache = new_use_cache
