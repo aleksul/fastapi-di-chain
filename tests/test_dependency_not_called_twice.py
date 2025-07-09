@@ -59,6 +59,28 @@ def route2(
     }
 
 
+@app.get("/test3")
+def route3(
+    dep3_value: Annotated[str, Depends(dep3)],
+    chain_value: Annotated[str, chain],
+) -> dict:
+    return {
+        "dep3_value": dep3_value,
+        "chain_value": chain_value,
+    }
+
+
+@app.get("/test4")
+def route4(
+    dep2_value: Annotated[str, Depends(dep2)],
+    chain_value: Annotated[str, chain],
+) -> dict:
+    return {
+        "dep2_value": dep2_value,
+        "chain_value": chain_value,
+    }
+
+
 def test_dependency_not_called_twice() -> None:
     reset_order()
     client = TestClient(app)
@@ -79,3 +101,23 @@ def test_dependency_not_called_twice_broken_order() -> None:
     assert data["dep3_value"] == "dep3-value"
     assert data["chain_value"] == "dep3-value"
     assert order == ["dep2", "dep3", "dep1"]
+
+
+def test_dependency_not_called_twice_broken_order2() -> None:
+    reset_order()
+    client = TestClient(app)
+    response = client.get("/test3")
+    data = response.json()
+    assert data["dep3_value"] == "dep3-value"
+    assert data["chain_value"] == "dep3-value"
+    assert order == ["dep3", "dep1", "dep2"]
+
+
+def test_dependency_not_called_twice_broken_order3() -> None:
+    reset_order()
+    client = TestClient(app)
+    response = client.get("/test4")
+    data = response.json()
+    assert data["dep2_value"] == "dep2-value"
+    assert data["chain_value"] == "dep3-value"
+    assert order == ["dep2", "dep1", "dep3"]
