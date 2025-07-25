@@ -1,6 +1,7 @@
 import inspect
 from typing import Any
 
+
 class _ChainedDependencyAsyncGen:
     def __init__(self, callable_: Any, param_name: str, signature: inspect.Signature) -> None:
         self._callable = callable_
@@ -18,6 +19,7 @@ class _ChainedDependencyAsyncGen:
     def __hash__(self) -> int:
         return hash(self._callable)
 
+
 class _ChainedDependencyGen:
     def __init__(self, callable_: Any, param_name: str, signature: inspect.Signature) -> None:
         self._callable = callable_
@@ -34,6 +36,7 @@ class _ChainedDependencyGen:
     def __hash__(self) -> int:
         return hash(self._callable)
 
+
 class _ChainedDependencyCoroutine:
     def __init__(self, callable_: Any, param_name: str, signature: inspect.Signature) -> None:
         self._callable = callable_
@@ -49,6 +52,7 @@ class _ChainedDependencyCoroutine:
 
     def __hash__(self) -> int:
         return hash(self._callable)
+
 
 class _ChainedDependencySync:
     def __init__(self, callable_: Any, param_name: str, signature: inspect.Signature) -> None:

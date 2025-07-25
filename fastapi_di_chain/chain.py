@@ -20,9 +20,9 @@ HandlerT = DependencyCallableT | DependsT
 
 
 class _DependsChainMeta(type):
-    def __or__(cls, new_dependency: HandlerT) -> Any:
+    def __or__(cls, new_dependency: HandlerT) -> DependsChain:  # type: ignore[override]
         """Start a new chain with the given handler."""
-        chain = cls()
+        chain: DependsChain = cls()
         chain._add_link(new_dependency)
         return chain
 
